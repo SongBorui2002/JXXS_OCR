@@ -26,7 +26,7 @@ FRAME_WINDOW = 5  # 滑动窗口大小
 INCREASE_THRESHOLD = 2.0  # 增长阈值
 
 # LUT文件路径
-DEFAULT_LUT_PATH = "/Users/sbr/Desktop/contrast_1.EP24.cube"
+DEFAULT_LUT_PATH = "/Users/sbr/Desktop/JXXS_OCR/JXXS_OCR.cube"
 
 # PaddleOCR 参数
 OCR_LANG = 'ch'

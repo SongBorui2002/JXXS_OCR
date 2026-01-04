@@ -6,7 +6,7 @@ PaddleOCR服务
 import cv2
 import numpy as np
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from video_preprocessor import FrameData
 from config import *
@@ -28,6 +28,7 @@ class OCRResult:
     pixel_count: int
     confidence: float
     text_type: str
+    bbox: Tuple[int, int, int, int]  # 边界框坐标 (x1, y1, x2, y2)
     roi_png_path: str
     raw_ocr_data: Dict[str, Any]  # 保存原始OCR数据用于调试
 
@@ -84,25 +85,82 @@ class PaddleOCRService:
             # 解析OCR结果
             text_parts = []
             confidences = []
+            bboxes = []
             raw_data = []
 
             for item in ocr_result:
                 texts = item.get('rec_texts', [])
                 scores = item.get('rec_scores', [])
 
-                for t, s in zip(texts, scores):
-                    if t:
-                        text_parts.append(t.strip())
-                        confidences.append(float(s))
-                        raw_data.append({'text': t.strip(), 'score': float(s)})
+                # 使用正确的bbox字段名
+                boxes = item.get('rec_polys', [])
+
+            for i, (t, s) in enumerate(zip(texts, scores)):
+                if t:
+                    text_parts.append(t.strip())
+                    confidences.append(float(s))
+
+                    # 提取bbox坐标
+                    if i < len(boxes) and boxes[i] is not None:
+                        box = boxes[i]
+                        # PaddleOCR返回的bbox通常是4个点的坐标 [(x1,y1), (x2,y2), (x3,y3), (x4,y4)]
+                        # 或者numpy数组格式
+                        try:
+                            if isinstance(box, np.ndarray):
+                                if box.shape == (4, 2):  # 4个点的坐标
+                                    points = box
+                                elif box.shape == (8,):  # 展平的8个坐标
+                                    points = box.reshape(4, 2)
+                                else:
+                                    raise ValueError(f"Unexpected box shape: {box.shape}")
+                            elif isinstance(box, list) and len(box) == 4:
+                                # 列表格式 [(x1,y1), (x2,y2), (x3,y3), (x4,y4)]
+                                points = np.array(box)
+                            elif isinstance(box, list) and len(box) == 8:
+                                # 展平的坐标 [x1,y1,x2,y2,x3,y3,x4,y4]
+                                points = np.array(box).reshape(4, 2)
+                            else:
+                                raise ValueError(f"Unexpected box format: {box}")
+
+                            # 计算边界框
+                            x_coords = points[:, 0]
+                            y_coords = points[:, 1]
+                            x1, y1 = int(x_coords.min()), int(y_coords.min())
+                            x2, y2 = int(x_coords.max()), int(y_coords.max())
+                            bbox = (x1, y1, x2, y2)
+                        except Exception as e:
+                            bbox = (0, 0, 0, 0)
+                    else:
+                        bbox = (0, 0, 0, 0)  # 默认bbox
+                        print(f"DEBUG: bbox不存在，使用默认值")
+
+                    bboxes.append(bbox)
+                    raw_data.append({
+                        'text': t.strip(),
+                        'score': float(s),
+                        'bbox': bbox
+                    })
 
             if not text_parts:
                 print(f"跳过帧 {frame_data.frame_number}: 未识别到文本")
                 return None
 
-            # 合并文本
+            # 合并文本，计算平均bbox（取最大的bbox作为代表）
             full_text = ''.join(filter(None, text_parts))
             avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
+
+            # 选择最大的bbox作为代表（适用于多行文本的情况）
+            if bboxes:
+                max_area = 0
+                selected_bbox = bboxes[0]
+                for bbox in bboxes:
+                    area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+                    if area > max_area:
+                        max_area = area
+                        selected_bbox = bbox
+                representative_bbox = selected_bbox
+            else:
+                representative_bbox = (0, 0, 0, 0)
 
             # 创建OCR结果
             result = OCRResult(
@@ -112,6 +170,7 @@ class PaddleOCRService:
                 pixel_count=frame_data.pixel_count,
                 confidence=avg_confidence,
                 text_type=frame_data.text_type,
+                bbox=representative_bbox,
                 roi_png_path="",  # 字节流传递，无临时文件
                 raw_ocr_data={'items': raw_data, 'avg_confidence': avg_confidence}
             )

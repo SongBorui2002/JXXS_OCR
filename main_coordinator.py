@@ -11,7 +11,7 @@ from concurrent.futures import ProcessPoolExecutor
 from video_preprocessor import VideoPreprocessor, FrameData
 from paddle_ocr_service import PaddleOCRService, OCRResult
 from result_processor import ResultProcessor
-from config import BATCH_SIZE, MAX_WORKERS, FRAME_WINDOW
+from config import BATCH_SIZE, MAX_WORKERS
 
 
 def process_ocr_batch_parallel(frame_data_batch: List[FrameData]) -> List[OCRResult]:
@@ -63,8 +63,8 @@ class MainCoordinator:
                 print("使用顺序处理模式")
                 results = self.process_video_sequential()
 
-            # 过滤和规范化结果
-            filtered_results = self.result_processor.filter_results(results)
+            # 完整的后处理流程（包括过滤和去重）
+            filtered_results = self.result_processor.process_results(results)
 
             # 保存结果
             output_file = self.result_processor.save_to_csv(filtered_results)
@@ -156,21 +156,16 @@ class MainCoordinator:
         color_results = self.preprocessor.get_colored_pixel_count(frame)
 
         for text_type, pixel_count, filtered_roi in color_results:
-            # 更新历史记录
-            pixel_history = self.preprocessor.pixel_history_green if text_type == 'VFX' else self.preprocessor.pixel_history_orange
-            if len(pixel_history) >= FRAME_WINDOW:
-                pixel_history.pop(0)
-            pixel_history.append(pixel_count)
-
-            # 检查是否应该进行OCR检测
+            # 检查是否应该进行OCR检测（已包含采样逻辑）
             if self.preprocessor.should_detect_ocr(text_type, pixel_count):
                 # 应用LUT处理
                 processed_roi = filtered_roi
                 if self.preprocessor.lut_available and self.preprocessor.lut_path:
                     try:
                         processed_roi = self.preprocessor.apply_lut_processing(filtered_roi, self.preprocessor.lut_path)
+                        print(f"\n已应用LUT处理: 帧 {frame_number} ({text_type})")
                     except Exception as e:
-                        print(f"LUT处理失败，使用原图: {e}")
+                        print(f"\nLUT处理失败，使用原图: {e}")
 
                 # 将处理后的图像编码为字节流
                 success, encoded_img = cv2.imencode('.png', processed_roi)
@@ -184,21 +179,10 @@ class MainCoordinator:
                         text_type=text_type,
                         image_shape=processed_roi.shape
                     )
+                    return frame_data
                 else:
                     print(f"图像编码失败: 帧{frame_number}")
-                    self.preprocessor.frames_since_last_detection['VFX'] += 1
-                    self.preprocessor.frames_since_last_detection['DI'] += 1
                     return None
-
-                # 更新检测历史
-                self.preprocessor.last_detected_count[text_type] = pixel_count
-                self.preprocessor.frames_since_last_detection[text_type] = 0
-
-                return frame_data
-
-        # 更新帧计数器
-        self.preprocessor.frames_since_last_detection['VFX'] += 1
-        self.preprocessor.frames_since_last_detection['DI'] += 1
 
         return None
 

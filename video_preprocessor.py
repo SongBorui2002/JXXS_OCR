@@ -65,11 +65,6 @@ class VideoPreprocessor:
         self.roi_top = int(self.video_info.height * ROI_TOP_RATIO)
         self.roi_right = int(self.video_info.width * ROI_RIGHT_RATIO)
 
-        # 初始化检测历史
-        self.pixel_history_green = []
-        self.pixel_history_orange = []
-        self.last_detected_count = {'VFX': 0, 'DI': 0}
-        self.frames_since_last_detection = {'VFX': 0, 'DI': 0}
 
         print(f"视频预处理器初始化完成: {video_path}")
         print(f"视频信息: {self.video_info.fps}fps, {self.video_info.width}x{self.video_info.height}")
@@ -238,31 +233,19 @@ class VideoPreprocessor:
         return results
 
     def should_detect_ocr(self, text_type: str, pixel_count: int) -> bool:
-        """判断是否应该进行OCR检测"""
-        pixel_history = self.pixel_history_green if text_type == 'VFX' else self.pixel_history_orange
+        """判断是否应该进行OCR检测 - 简化版：只要超过像素阈值就检测"""
+        # 初始化采样计数器（如果不存在）
+        if not hasattr(self, '_sample_counters'):
+            self._sample_counters = {'VFX': 0, 'DI': 0}
 
-        if len(pixel_history) < FRAME_WINDOW:
-            return False
+        # 只要超过像素阈值就检测（移除了历史记录判断）
+        if pixel_count > PIXEL_THRESHOLD:
+            # 实现2帧检测1帧的采样：每2帧中只检测第0帧和第2帧
+            counter = self._sample_counters[text_type]
+            self._sample_counters[text_type] = (counter + 1) % 2
+            return counter == 0  # 只有计数器为0时才检测（即每隔一帧检测一次）
 
-        avg_history = sum(pixel_history) / len(pixel_history)
-        ten_seconds_frames = int(10 * self.video_info.fps)
-
-        should_detect = (
-            pixel_count > PIXEL_THRESHOLD and
-            (
-                (pixel_count > avg_history * INCREASE_THRESHOLD and
-                 all(pixel_count > x * INCREASE_THRESHOLD for x in pixel_history[-3:]))
-                or
-                (pixel_count < avg_history * 0.8 and
-                 all(pixel_count < x * 0.8 for x in pixel_history[-3:]))
-                or
-                (self.frames_since_last_detection[text_type] >= MIN_DETECTION_INTERVAL and
-                 (self.frames_since_last_detection[text_type] >= ten_seconds_frames or
-                  abs(pixel_count - self.last_detected_count[text_type]) > self.last_detected_count[text_type] * 0.3))
-            )
-        )
-
-        return should_detect
+        return False
 
     def process_frames_batch(self, batch_frames: List[int]) -> List[FrameData]:
         """批量处理帧，返回需要OCR的帧数据"""
@@ -280,12 +263,6 @@ class VideoPreprocessor:
             color_results = self.get_colored_pixel_count(frame)
 
             for text_type, pixel_count, filtered_roi in color_results:
-                # 更新历史记录
-                pixel_history = self.pixel_history_green if text_type == 'VFX' else self.pixel_history_orange
-                if len(pixel_history) >= FRAME_WINDOW:
-                    pixel_history.pop(0)
-                pixel_history.append(pixel_count)
-
                 # 判断是否需要OCR
                 if self.should_detect_ocr(text_type, pixel_count):
                     # 应用LUT处理（如果可用）
@@ -313,14 +290,6 @@ class VideoPreprocessor:
                         print(f"图像编码失败: 帧{frame_number}")
                         continue
                     ocr_frames.append(frame_data)
-
-                    # 更新检测记录
-                    self.last_detected_count[text_type] = pixel_count
-                    self.frames_since_last_detection[text_type] = 0
-
-            # 更新帧计数器
-            self.frames_since_last_detection['VFX'] += 1
-            self.frames_since_last_detection['DI'] += 1
 
         return ocr_frames
 
