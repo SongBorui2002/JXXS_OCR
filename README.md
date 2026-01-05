@@ -1,199 +1,225 @@
-# 重构版视频字幕OCR系统
+# JXXS Video Subtitle OCR System
 
-基于原有`videoOCR_Paddle.py`的重构版本，将单体架构拆分为微服务架构，支持并发处理41分钟长视频。
+🎬 基于深度学习的智能视频字幕OCR识别系统，专为影视后期制作设计，能够自动识别和提取VFX/DI字幕内容。
 
-## 架构设计
+## 📁 项目文件说明
 
-### 核心服务模块
+- **`main_coordinator.py`** - 主协调器（当前使用版本）
+- **`video_preprocessor.py`** - 视频预处理服务
+- **`paddle_ocr_service.py`** - OCR服务
+- **`result_processor.py`** - 结果处理服务
+- **`config.py`** - 统一配置管理
+- **`videoOCR_Paddle.py`** - 🔶 **历史文件**（单体架构版本，已废弃）
 
-1. **`config.py`** - 统一配置管理
-   - 所有参数和阈值定义
-   - 颜色范围、检测参数等
+## ✨ 核心特性
 
-2. **`video_preprocessor.py`** - 视频预处理服务
-   - 视频解码和帧提取
-   - 颜色检测和智能触发
-   - LUT图像增强处理
-   - 输出需要OCR的帧数据
+- **🎯 智能识别**：基于HLS颜色空间的像素阈值检测，自动识别绿色(VFX)和橙色(DI)字幕
+- **⚡ 高性能并发**：多进程架构，支持41分钟长视频并发处理，处理速度提升56%
+- **🔍 精确检测**：5帧滑动窗口智能判断，避免频繁重复检测
+- **🎨 图像增强**：支持LUT文件预处理，提升OCR准确性
+- **📊 智能优化**：文本规范化、去重合并、质量过滤
+- **🛠️ 模块化设计**：微服务架构，便于维护和扩展
 
-3. **`paddle_ocr_service.py`** - PaddleOCR服务
-   - 批量OCR文本识别
-   - 并行处理支持
+## 🚀 快速开始
 
-4. **`result_processor.py`** - 结果处理服务
-   - 文本规范化
-   - 结果过滤、去重、合并
-   - CSV输出
+### 环境要求
 
-5. **`main_coordinator.py`** - 主进程协调器
-   - 协调各服务间的通信
-   - 支持顺序/并行处理模式
-   - 进度监控和错误处理
+- Python 3.7+
+- OpenCV 4.5+
+- PaddlePaddle 2.4+
+- PaddleOCR 2.6+
 
-## 安装和使用
+### 安装步骤
 
-### 1. 创建虚拟环境
+1. **克隆项目**
+   ```bash
+   cd /Users/sbr/Desktop/JXXS_OCR
+   ```
+
+2. **创建虚拟环境**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # macOS/Linux
+   # 或在Windows上: venv\Scripts\activate
+   ```
+
+3. **安装依赖**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### 基本使用
 
 ```bash
-cd /Users/sbr/Desktop/JXXS_OCR
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或在Windows上: venv\Scripts\activate
-```
-
-### 2. 安装依赖
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. 运行系统
-
-```bash
-# 基本用法
+# 基本识别
 python main_coordinator.py --video_path your_video.mp4
 
-# 指定时间范围
+# 指定时间范围处理
 python main_coordinator.py --video_path your_video.mp4 --start_time 00:10:00 --end_time 00:20:00
 
-# 强制顺序处理（调试用）
+# 使用LUT增强图像质量
+python main_coordinator.py --video_path your_video.mp4 --lut_path JXXS_OCR.cube
+
+# 调试模式（顺序处理）
 python main_coordinator.py --video_path your_video.mp4 --sequential
-
-# 使用LUT文件增强图像
-python main_coordinator.py --video_path your_video.mp4 --lut_path /path/to/lut.cube
 ```
 
-### 4. 测试架构
+## 🏗️ 系统架构
 
-```bash
-python test_architecture.py
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  MainCoordinator │───▶│ VideoPreprocessor│───▶│ PaddleOCR Service│
+│   (协调调度)     │    │   (智能检测)     │    │   (文本识别)     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│ ResultProcessor │◀───│   Color Detection│◀───│   Batch OCR     │
+│   (结果优化)     │    │   (HLS阈值)     │    │   (并发处理)     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-## 技术特性
+### 核心模块
 
-### 并发处理
-- **自动模式选择**：短视频使用顺序处理，长视频自动切换并行模式
-- **多进程架构**：预处理、OCR、结果处理各司其职
-- **批处理优化**：减少进程间通信开销
+| 模块 | 职责 | 特性 |
+|------|------|------|
+| **main_coordinator.py** | 主进程协调器 | 自动选择处理模式，进度监控 |
+| **video_preprocessor.py** | 视频预处理 | 智能颜色检测，LUT增强 |
+| **paddle_ocr_service.py** | OCR服务 | 批量文本识别，并发优化 |
+| **result_processor.py** | 结果处理 | 文本规范化，去重合并 |
+| **config.py** | 配置管理 | 统一参数配置 |
 
-### 智能检测
-- **颜色触发**：基于HLS颜色空间的像素阈值检测
-- **历史分析**：5帧滑动窗口 + 多条件智能判断
-- **防抖动**：避免频繁重复检测
+## 📋 输出格式
 
-### 图像增强
-- **预处理LUT**：在视频预处理阶段应用LUT增强，提高OCR准确性
-- **形态学处理**：减少颜色斑点干扰
-
-### 结果优化
-- **文本规范化**：统一VFX/DI字幕格式
-- **去重合并**：消除时间相近的重复结果
-- **质量过滤**：基于置信度阈值过滤
-
-## 输出格式
-
-### CSV文件格式
+### CSV结果文件
 ```csv
 帧数,时间码,文本内容,像素数量,置信度,类型
 100,00:00:04:00,VFX:测试字幕,800,0.950,VFX
 200,00:00:08:00,DI:测试字幕,750,0.880,DI
 ```
 
-### 中间文件
-- `tmp/`目录：保存检测到的ROI图像，便于调试和验证
+### 临时文件
+- `tmp/` - 保存检测到的ROI图像，便于调试验证
 
-## 配置参数
+## ⚙️ 配置参数
 
-主要参数位于`config.py`：
+### 颜色检测参数
+```python
+# VFX字幕 (绿色)
+LOWER_GREEN_HLS = [45, 106, 138]
+UPPER_GREEN_HLS = [75, 195, 255]
 
-- **视频参数**：`DEFAULT_FPS`, `ROI_TOP_RATIO`, `ROI_RIGHT_RATIO`
-- **颜色检测**：`LOWER_GREEN_HLS`, `UPPER_GREEN_HLS` 等
-- **处理参数**：`PIXEL_THRESHOLD`, `BATCH_SIZE`, `MAX_WORKERS`
-- **时间控制**：`MIN_DETECTION_INTERVAL`, `MAX_DETECTION_INTERVAL`
+# DI字幕 (橙色)
+LOWER_ORANGE_HLS = [10, 106, 75]
+UPPER_ORANGE_HLS = [25, 160, 245]
+```
 
-## 性能优化
+### 处理参数
+```python
+PIXEL_THRESHOLD = 680      # 像素阈值
+BATCH_SIZE = 20           # OCR批处理大小
+MAX_WORKERS = 3           # 并发实例数量
+FRAME_WINDOW = 5          # 滑动窗口大小
+```
 
-### 长视频处理
-- **分批处理**：将视频分成小批次，避免内存溢出
-- **并行OCR**：多个PaddleOCR实例并发处理
-- **智能调度**：根据视频长度自动选择处理策略
+## 📈 性能表现
 
-### 内存管理
-- **帧复用**：及时释放不需要的帧数据
-- **批处理传输**：减少进程间数据拷贝
+### 并发优化成果
+- **批处理优化**：20张/批，吞吐量4.71张/秒
+- **并发提升**：3实例并发，吞吐量7.36张/秒 (**+56%**)
+- **时间效率**：41分钟视频约2小时完成
 
-## 故障排除
+### 智能调度
+- **短视频**：自动使用顺序处理模式
+- **长视频**：自动切换并行模式 (>1000帧)
+- **内存优化**：分批处理，避免内存溢出
+
+## 🔧 高级用法
+
+### 命令行参数
+
+| 参数 | 简写 | 说明 | 示例 |
+|------|------|------|------|
+| `--video_path` | `-v` | 视频文件路径 (必需) | `--video_path video.mp4` |
+| `--lut_path` | `-l` | LUT文件路径 | `--lut_path enhance.cube` |
+| `--start_time` | `-s` | 开始时间 | `--start_time 00:10:00` |
+| `--end_time` | `-e` | 结束时间 | `--end_time 00:20:00` |
+| `--sequential` | - | 强制顺序处理 | `--sequential` |
+
+### 自定义配置
+
+编辑 `config.py` 调整参数：
+
+```python
+# 调整检测灵敏度
+PIXEL_THRESHOLD = 500      # 降低阈值提高灵敏度
+INCREASE_THRESHOLD = 1.5   # 调整增长检测阈值
+
+# 优化性能
+BATCH_SIZE = 30           # 增大批处理大小
+MAX_WORKERS = 4           # 增加并发实例
+```
+
+## 🐛 故障排除
 
 ### 常见问题
 
-1. **PaddleOCR未安装**
-   ```
-   pip install paddlepaddle paddleocr
-   ```
-
-2. **视频文件无法打开**
-   - 检查文件路径是否正确
-   - 确认视频格式支持
-
-3. **LUT文件不存在**
-   - 检查LUT文件路径
-   - 或者移除`--lut_path`参数
-
-4. **内存不足**
-   - 减小`BATCH_SIZE`
-   - 使用顺序处理模式
-
-### 调试模式
-
+**❌ PaddleOCR安装失败**
 ```bash
-# 查看详细处理过程
-python main_coordinator.py --video_path video.mp4 --sequential
+# 手动安装
+pip install paddlepaddle paddleocr --upgrade
 ```
 
-## 架构优势
+**❌ 视频文件无法打开**
+- 检查文件路径是否正确
+- 确认视频格式支持（MP4, MOV, AVI等）
+- 检查文件权限
 
-相比原单体架构，新架构具有：
+**❌ LUT文件不存在**
+```bash
+# 检查LUT文件路径
+ls -la JXXS_OCR.cube
 
-1. **模块化**：各服务职责单一，便于维护和扩展
-2. **并发性**：充分利用多核CPU，提升处理速度
-3. **可扩展性**：可独立升级各服务组件
-4. **容错性**：单个服务失败不影响整体流程
-5. **测试性**：各模块可独立测试
-6. **预处理优化**：LUT增强在预处理阶段完成，提高整体效率
+# 或跳过LUT处理
+python main_coordinator.py --video_path video.mp4
+```
 
-## 最新更新
-
-### 并发性能优化 (2025-01-02)
-
-**测试结果**：
-- ✅ **批大小优化**：20张图片每批，吞吐量4.71张/秒
-- ✅ **并发测试**：3个PaddleOCR实例并发，吞吐量提升至7.36张/秒 (+56%)
-- ✅ **性能预期**：41分钟视频约2小时完成 (之前预计4小时)
-
-**架构重构**：
-- ✅ **职责分离**：paddle_ocr_service.py专注OCR处理，移除并发逻辑
-- ✅ **并发统一**：main_coordinator.py统一管理所有并发策略
-- ✅ **两阶段处理**：预处理阶段 → OCR并发处理阶段
-
-**配置更新**：
+**❌ 内存不足错误**
 ```python
-BATCH_SIZE = 20    # 批处理大小
-MAX_WORKERS = 3    # 并发实例数量
+# 在config.py中调整
+BATCH_SIZE = 10      # 减小批处理大小
+MAX_WORKERS = 2      # 减少并发实例
 ```
 
-### LUT服务重构 (2025-01-02)
+### 调试技巧
 
-**变更说明**：
-- ✅ **LUT处理迁移**：将LUT图像增强从`paddle_ocr_service.py`移动到`video_preprocessor.py`
-- ✅ **预处理优化**：在检测到需要OCR的帧时立即应用LUT处理
-- ✅ **职责分离**：预处理器负责图像增强，OCR服务专注文本识别
-- ✅ **性能提升**：减少重复的图像处理开销
+1. **顺序模式调试**：使用 `--sequential` 查看详细处理过程
+2. **临时文件检查**：查看 `tmp/` 目录验证ROI检测结果
+3. **日志分析**：观察控制台输出定位问题
 
-## 兼容性
+## 🔄 更新日志
 
-- **Python**: 3.7+
-- **OpenCV**: 4.5+
-- **PaddlePaddle**: 2.4+
-- **PaddleOCR**: 2.6+
-- **操作系统**: macOS, Linux, Windows
+### v2.0.0 (2025-01-02) - 并发性能优化
+- ✅ **架构重构**：分离预处理和OCR处理职责
+- ✅ **并发优化**：3实例并发，性能提升56%
+- ✅ **批处理调优**：20张/批，最优吞吐量4.71张/秒
+- ✅ **LUT迁移**：预处理阶段完成图像增强
+
+### v1.0.0 - 微服务架构重构
+- ✅ **模块化设计**：拆分为5个独立服务模块
+- ✅ **智能调度**：自动选择处理模式
+- ✅ **结果优化**：规范化、去重、质量过滤
+- ✅ **配置统一**：集中参数管理
+
+## 📄 许可证
+
+本项目仅供学习和研究使用，请遵守相关法律法规。
+
+## 🤝 贡献
+
+欢迎提交Issue和Pull Request来改进项目！
+
+---
+
+**技术栈**: Python • OpenCV • PaddleOCR • NumPy • Colour Science
 # JXXS_OCR

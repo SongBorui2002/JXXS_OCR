@@ -170,15 +170,44 @@ class ResultProcessor:
 
                     iou = self._calculate_iou(current_bbox, next_bbox)
 
-                    if iou >= iou_threshold:
+                    # 计算文本相似度
+                    text_similarity = self._text_similarity(continuous_group[-1].text, next_result.text)
+
+                    # DEBUG: 显示IoU和文本相似度计算详情
+                    # print(f"DEBUG IoU: 帧{continuous_group[-1].frame_number} vs 帧{next_result.frame_number}")
+                    # print(f"DEBUG IoU: 当前bbox: {current_bbox}, 下一bbox: {next_bbox}")
+                    # print(f"DEBUG IoU: IoU={iou:.3f}, 文本相似度={text_similarity:.3f}")
+                    # print(f"DEBUG IoU: 文本比较: '{continuous_group[-1].text}' vs '{next_result.text}'")
+
+                    # OR条件：IoU >= 阈值 或者 文本相似度 >= 0.8 (增大断裂时要求更高相似度)
+                    merge_condition = (iou >= iou_threshold) or (text_similarity >= 0.8)
+
+                    if merge_condition:
                         continuous_group.append(next_result)
                         j += 1
+                        reason = f"IoU={iou:.3f}>={iou_threshold}" if iou >= iou_threshold else f"文本相似度={text_similarity:.3f}>=0.7"
+                        # print(f"DEBUG IoU: ✓ 加入组 ({reason})")
                     else:
-                        break  # IoU不满足，结束当前组
+                        # print(f"DEBUG IoU: ✗ 结束组 (IoU={iou:.3f}<{iou_threshold} 且 文本相似度={text_similarity:.3f}<0.8)")
+                        break  # 合并条件都不满足，结束当前组
                 else:
+                    # 更精确地显示断裂原因
+                    # if frame_gap > max_frame_gap:
+                    #     print(f"DEBUG IoU: ✗ 断裂原因: 帧间距{frame_gap} > {max_frame_gap} (帧{continuous_group[-1].frame_number}→{next_result.frame_number})")
+                    # elif next_result.text_type != current_result.text_type:
+                    #     print(f"DEBUG IoU: ✗ 断裂原因: 类型不匹配 '{current_result.text_type}'→'{next_result.text_type}' (帧{continuous_group[-1].frame_number}→{next_result.frame_number})")
+                    # else:
+                    #     print(f"DEBUG IoU: ✗ 断裂原因: 未知错误 (帧{continuous_group[-1].frame_number}→{next_result.frame_number})")
                     break  # 帧号不连续或类型不同，结束当前组
 
             # 处理当前连续组
+            # DEBUG: 显示连续组的详细信息
+            group_texts = [r.text for r in continuous_group]
+            group_frames = [r.frame_number for r in continuous_group]
+            # print(f"DEBUG: 连续组分析 - 帧范围: {group_frames[0]}-{group_frames[-1]}, 长度: {len(continuous_group)}")
+            # print(f"DEBUG: 组内文本: {group_texts}")
+            # print(f"DEBUG: 文本类型: {continuous_group[0].text_type}")
+
             if len(continuous_group) >= 10:  # 只有长度>=10的组才认为是真正的字幕
                 # 从连续组中选择最佳结果，但保持第一帧的时间
                 best_result = self._select_best_from_continuous_group(continuous_group)
@@ -187,11 +216,14 @@ class ResultProcessor:
                 best_result.timecode = continuous_group[0].timecode
                 deduplicated.append(best_result)
                 print(f"连续帧组去重: {len(continuous_group)} 帧 -> 1 帧 (帧 {continuous_group[0].frame_number})")
+                # print(f"DEBUG: 保留结果: '{best_result.text}' (置信度: {best_result.confidence:.3f})")
             elif len(continuous_group) > 1:
                 print(f"跳过短连续组: {len(continuous_group)} 帧 (帧 {continuous_group[0].frame_number}) - 长度不足10帧")
+                # print(f"DEBUG: 跳过文本: {group_texts}")
             else:
                 # 单个结果直接删除
                 print(f"删除单帧结果: 帧 {continuous_group[0].frame_number}")
+                # print(f"DEBUG: 删除文本: '{continuous_group[0].text}' (置信度: {continuous_group[0].confidence:.3f})")
 
             i = j  # 移动到下一组的开始
 
@@ -241,6 +273,7 @@ class ResultProcessor:
                 continue
 
             similar_group = [result]
+            # print(f"DEBUG: 处理结果 {i}: '{result.text}' (帧 {result.frame_number}, 类型 {result.text_type})")
 
             # 查找相似的文本
             for j in range(i + 1, len(ocr_results)):
@@ -248,18 +281,30 @@ class ResultProcessor:
                     continue
 
                 other = ocr_results[j]
+                similarity = self._text_similarity(result.text, other.text)
+                time_diff = abs(result.frame_number - other.frame_number)
+
+                # DEBUG: 显示相似性检查详情
+                # print(f"DEBUG: 比较结果 {i} vs {j}: 相似度 {similarity:.3f}, 时间差 {time_diff}帧")
+                # print(f"DEBUG: 文本比较: '{result.text}' vs '{other.text}'")
 
                 # 相似性判断：相同类型、文本相似度高、时间相近
                 if (result.text_type == other.text_type and
-                    self._text_similarity(result.text, other.text) > 0.8 and
-                    abs(result.frame_number - other.frame_number) <= 25):  # 1秒内
+                    similarity > 0.8 and
+                    time_diff <= 25):  # 1秒内
 
                     similar_group.append(other)
                     used_indices.add(j)
+                    # print(f"DEBUG: 找到相似文本，将结果 {j} 加入组")
 
             # 从相似组中选择最好的
             best_result = self._select_best_from_group(similar_group)
             merged.append(best_result)
+
+            if len(similar_group) > 1:
+                # print(f"DEBUG: 相似组合并: {len(similar_group)} 个结果 -> 1 个")
+                # print(f"DEBUG: 合并后保留: '{best_result.text}' (帧 {best_result.frame_number})")
+                pass
 
         print(f"文本合并完成: 原始 {len(ocr_results)} 个结果，合并后 {len(merged)} 个结果")
         return merged
@@ -334,12 +379,17 @@ class ResultProcessor:
 
         # 1. 过滤低质量结果
         filtered = self.filter_results(ocr_results, min_confidence=0.1)
+        print(f"过滤后: {len(filtered)} 个结果")
 
-        # 2. 基于连续帧和IoU的去重
-        deduplicated = self.deduplicate_by_continuous_frames_iou(filtered, max_frame_gap=3, iou_threshold=0.8)
+        # 2. 基于连续帧和IoU的去重 (支持最大12帧断裂)
+        continuous_deduplicated = self.deduplicate_by_continuous_frames_iou(filtered, max_frame_gap=12, iou_threshold=0.8)
+        print(f"连续帧去重后: {len(continuous_deduplicated)} 个结果")
 
-        print(f"后处理完成: 最终 {len(deduplicated)} 个结果")
-        return deduplicated
+        # 3. 合并相似的文本（即使不连续）
+        final_results = self.merge_similar_texts(continuous_deduplicated)
+
+        print(f"后处理完成: 最终 {len(final_results)} 个结果")
+        return final_results
 
     def save_to_csv(self, results: List[OCRResult], output_file: str = None) -> str:
         """保存结果为CSV文件"""
