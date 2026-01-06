@@ -1,0 +1,365 @@
+{
+  "total_count": 44,
+  "colors": {
+    "Yellow": 9,
+    "Green": 35
+  },
+  "frame_range": {
+    "min": 462.0,
+    "max": 56273.0
+  },
+  "markers": [
+    {
+      "frame_id": 462.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:D皮",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 488.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:D皮",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 1384.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:磨皮",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 6106.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:擦重庆",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 7722.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:背景黄衣小孩衣服消色",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 7957.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:擦右下角穿帮",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 8439.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:擦话筒穿帮",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 8636.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 10063.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 10626.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 10728.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 12202.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 12438.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 13376.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 13836.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:台成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 15287.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 15572.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:重庆改武岩（英文",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 20231.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:字牌改星光乐团",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 22846.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:1修改手机信息",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 23507.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成向云非视频VFX",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 23615.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成向云非视频VFX",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 27181.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 27441.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 27547.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 28668.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 28852.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 29211.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 31475.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 31796.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 34514.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:合成观众",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 35100.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:去抖动",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 36051.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:于主任照片",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 36332.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:擦玻璃反光",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 38314.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:于主任照片",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 45287.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:缝合",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 45586.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:整场叶灵风近景磨皮修眼袋",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 46480.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:整场杨佩佩近景磨皮",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 52439.0,
+      "color": "Yellow",
+      "name": "DI",
+      "note": "DI:D1.去抖动",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 54584.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:FX字牌改星光乐团",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 54859.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:叶灵风付斯雨照片",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 54891.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:叶灵风付斯雨照片",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 55095.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:叶灵风付斯雨照片",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 55305.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:叶灵风付斯雨照片",
+      "duration": 1.0,
+      "custom_data": ""
+    },
+    {
+      "frame_id": 56273.0,
+      "color": "Green",
+      "name": "VFX",
+      "note": "VFX:擦机器",
+      "duration": 1.0,
+      "custom_data": ""
+    }
+  ]
+}
