@@ -34,10 +34,10 @@ def test_add_markers():
         print("\n测试: 从CSV批量添加标记点")
 
         # 检查CSV文件是否存在
-        csv_path = "EP25_detected_frames_paddle_refactored.csv"
+        csv_path = "EP30_detected_frames_paddle_refactored.csv"
         if not os.path.exists(csv_path):
             # 如果当前目录没有，尝试上级目录
-            csv_path = "../EP25_detected_frames_paddle_refactored.csv"
+            csv_path = "../EP30_detected_frames_paddle_refactored.csv"
 
         if os.path.exists(csv_path):
             print(f"找到CSV文件: {csv_path}")
@@ -86,9 +86,9 @@ def test_csv_parsing():
     print("测试CSV解析功能...")
 
     try:
-        csv_path = "EP24_detected_frames_paddle_refactored.csv"
+        csv_path = "EP30_detected_frames_paddle_refactored.csv"
         if not os.path.exists(csv_path):
-            csv_path = "../EP24_detected_frames_paddle_refactored.csv"
+            csv_path = "../EP30_detected_frames_paddle_refactored.csv"
 
         if not os.path.exists(csv_path):
             print(f"✗ 找不到CSV文件: {csv_path}")

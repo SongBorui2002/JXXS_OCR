@@ -6,12 +6,14 @@ import time
 import argparse
 import cv2
 import numpy as np
+import os
+import glob
 from typing import List, Optional
 from concurrent.futures import ProcessPoolExecutor
 from video_preprocessor import VideoPreprocessor, FrameData
 from paddle_ocr_service import PaddleOCRService, OCRResult
 from result_processor import ResultProcessor
-from config import BATCH_SIZE, MAX_WORKERS
+from config import BATCH_SIZE, MAX_WORKERS, TMP_DIR
 
 
 def process_ocr_batch_parallel(frame_data_batch: List[FrameData]) -> List[OCRResult]:
@@ -81,11 +83,31 @@ class MainCoordinator:
             print(f"帧范围: {stats['frame_range']}")
             print(f"结果文件: {output_file}")
 
+            # 清理临时文件
+            self._cleanup_tmp_files()
+
             return output_file
 
         except Exception as e:
             print(f"处理过程中发生错误: {e}")
             raise
+
+    def _cleanup_tmp_files(self):
+        """清理临时目录中的临时文件"""
+        try:
+            if os.path.exists(TMP_DIR):
+                # 删除 tmp 目录下的所有 png 文件
+                png_files = glob.glob(os.path.join(TMP_DIR, "*.png"))
+                if png_files:
+                    count = len(png_files)
+                    for f in png_files:
+                        try:
+                            os.remove(f)
+                        except Exception:
+                            pass
+                    print(f"\n已清理 {count} 个临时文件")
+        except Exception as e:
+            print(f"\n清理临时文件失败: {e}")
 
     def process_video_sequential(self) -> List[OCRResult]:
         """顺序处理视频（适合短视频或调试）"""
@@ -120,7 +142,8 @@ class MainCoordinator:
         print("阶段1: 顺序预处理视频帧...")
         ocr_tasks: List[FrameData] = []
 
-        cap = cv2.VideoCapture(self.video_path)
+        # 使用预处理器的 VideoCapture，避免重复打开
+        cap = self.preprocessor.cap
         if not cap.isOpened():
             raise ValueError(f"无法打开视频文件: {self.video_path}")
 
@@ -132,21 +155,24 @@ class MainCoordinator:
         frame_number = start_frame
         processed_count = 0
 
-        while frame_number < end_frame:
-            ret, frame = cap.read()
-            if not ret:
-                break
+        try:
+            while frame_number < end_frame:
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
-            frame_data = self._preprocess_single_frame(frame, frame_number)
-            if frame_data:
-                ocr_tasks.append(frame_data)
+                frame_data = self._preprocess_single_frame(frame, frame_number)
+                if frame_data:
+                    ocr_tasks.append(frame_data)
 
-            processed_count += 1
-            progress = self.preprocessor.get_progress_info(processed_count)
-            print(f"\r预处理进度: {progress} ({processed_count}/{total_frames_to_process} 帧)", end="", flush=True)
-            frame_number += 1
+                processed_count += 1
+                progress = self.preprocessor.get_progress_info(processed_count)
+                print(f"\r预处理进度: {progress} ({processed_count}/{total_frames_to_process} 帧)", end="", flush=True)
+                frame_number += 1
+        finally:
+            # 确保 VideoCapture 被释放（虽然预处理器的 __del__ 也会释放）
+            pass  # cap 由 VideoPreprocessor 管理
 
-        cap.release()
         print(f"\n预处理完成，获得 {len(ocr_tasks)} 个OCR任务")
         return ocr_tasks
 
